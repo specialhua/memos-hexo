@@ -9,6 +9,14 @@
 
 我在上游基础上做了针对自己博客的定制和重构，包括页面样式、加载动画、Memos API 请求逻辑和若干兼容性修复。
 
+## 预览
+
+  <p align="center">
+    <img src="./docs/preview.png" alt="页面预览" width="900" />
+  </p>
+
+或直接前往我的博客查看：[Inkcodes memos](https://inkcodes.com/memos/)
+
 ## 当前特性
 
 - 单独页面集成到 Hexo，不依赖 Hexo 插件
