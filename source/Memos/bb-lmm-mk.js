@@ -14,7 +14,21 @@ const DEFAULT_CONFIG = {
   limit: 10,
   creatorId: '1',
   domId: '#bber',
+  authorName: '',
 };
+
+function normalizeMemosUrl(url) {
+  if (typeof url !== 'string') {
+    return '';
+  }
+
+  const trimmed = url.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  return trimmed.endsWith('/') ? trimmed : `${trimmed}/`;
+}
 
 // 合并用户配置
 const bbMemo = {
@@ -22,9 +36,19 @@ const bbMemo = {
   ...(typeof bbMemos !== 'undefined' ? bbMemos : {})
 };
 
+bbMemo.memos = normalizeMemosUrl(bbMemo.memos);
+
 // 验证配置
 if (!bbMemo.memos || !bbMemo.domId) {
   console.error('Memos配置不完整，请检查 memos 和 domId 参数');
+}
+
+function renderError(message) {
+  if (!AppState.bbDom) {
+    return;
+  }
+
+  AppState.bbDom.innerHTML = `<div class="error">${message}</div>`;
 }
 
 // 工具函数
@@ -71,43 +95,17 @@ const allCSS = `
   box-sizing: border-box;
 }
 
-/* 卡片瀑布流布局 */
-.bb-timeline {
-  position: relative;
-  padding: 0;
-  min-height: 100px;
-}
-
-.bb-timeline .memo-item {
-  position: absolute;
-  /* 移除固定宽度，由JS动态设置 */
-  transition: all 0.3s ease, opacity 0.5s ease;
-  opacity: 0;
-}
-
-.bb-timeline .bb-item {
-  background: #fff;
-  border-radius: 12px;
-  padding: 0.6rem;
-  box-shadow: 0 3px 5px 0 rgba(0,0,0,0.24), 0 7px 10px 0 rgba(0,0,0,0.19);
-  transition: all 0.3s ease;
-  border: 1px solid #f0f0f0;
-}
-
-.bb-timeline .bb-item:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-  transform: translateY(-2px);
-}
-
 /* 内容区域 */
 .bb-cont {
-  margin-bottom: 0.6rem;
-  line-height: 1.5;
+  margin-bottom: 0;
+  line-height: 1.85;
+  font-size: 15px;
+  letter-spacing: 0.01em;
 }
 
 .bb-cont p {
-  margin: 0.3rem 0;
-  color: #333;
+  margin: 0.5rem 0;
+  color: inherit;
 }
 
 .bb-cont img {
@@ -159,8 +157,8 @@ const allCSS = `
 
 /* 亮色模式特定样式 */
 [data-user-color-scheme="light"] .bb-timeline .bb-item {
-  background: #fff;
-  border-color: #f0f0f0;
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(120, 120, 120, 0.22);
   color: #333;
 }
 
@@ -191,11 +189,14 @@ const allCSS = `
 /* 工具栏 */
 .bb-tool {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  padding-top: 0.75rem;
-  border-top: 1px solid #f0f0f0;
-  margin-top: 0.75rem;
+  padding-top: 0;
+  border-top: none;
+  margin-top: 0;
+  opacity: 0.78;
+  transform-origin: left center;
+  font-size: 12px;
 }
 
 /* 信息区域 */
@@ -204,7 +205,7 @@ const allCSS = `
   justify-content: space-between;
   align-items: center;
   margin-top: 0.4rem;
-  font-size: 0.875rem;
+  font-size: 12px;
   color: #666;
 }
 
@@ -218,7 +219,9 @@ const allCSS = `
 }
 
 .datatime {
-  font-size: 0.875rem;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
 }
 
 /* 加载按钮 - 风琴样式 */
@@ -399,35 +402,36 @@ const allCSS = `
 .loader {
   position: relative;
   width: 100%;
-  margin: 3rem auto;
-  text-align: center;
+  margin: 2.75rem auto;
+  display: grid;
+  place-items: center;
   z-index: 10;
 }
 
-.loader .circular {
-  animation: rotate 2s linear infinite;
-  width: 60px;
-  height: 60px;
-  margin: 0 auto;
+.loader-frame {
+  width: min(30vmin, 140px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
 }
 
-.path {
-  stroke-dasharray: 90, 150;
-  stroke-dashoffset: 0;
-  animation: dash 1.5s ease-in-out infinite;
+.loader-frame svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.loader-path {
+  stroke: currentColor;
+  stroke-width: 4.2;
   stroke-linecap: round;
-  stroke: #1976d2;
-  stroke-width: 2;
+  stroke-linejoin: round;
+  opacity: 0.12;
+  fill: none;
 }
 
-@keyframes rotate {
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes dash {
-  0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
-  50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
-  100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+.loader-particle {
+  fill: currentColor;
 }
 
 /* 暗色主题 */
@@ -440,8 +444,8 @@ const allCSS = `
 }
 
 [data-user-color-scheme="dark"] .bb-timeline .bb-item {
-  background: var(--board-bg-color);
-  border-color: var(--line-color);
+  background: rgba(255, 255, 255, 0.015);
+  border-color: rgba(255, 255, 255, 0.14);
   color: var(--text-color);
 }
 
@@ -451,7 +455,7 @@ const allCSS = `
 }
 
 [data-user-color-scheme="dark"] .bb-tool {
-  border-top-color: var(--line-color);
+  border-top-color: transparent;
 }
 
 [data-user-color-scheme="dark"] .bb-info {
@@ -526,93 +530,222 @@ const allCSS = `
 
 }
 
-
-/* 移动端响应式样式 */
-@media (max-width: 768px) {
-  #bber {
-    margin-top: 0.5rem !important;
-    padding: 0 10px !important;
-  }
-  
-  .bb-timeline {
-    padding: 0 !important;
-  }
-  
-  .bb-timeline .bb-item {
-    padding: 1rem !important;
-    margin-bottom: 1rem !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-    width: 100% !important;
-    box-sizing: border-box;
-  }
-  
-  .bb-timeline .bb-item:hover {
-    transform: none !important;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.15) !important;
-  }
-  
-  .bb-cont {
-    margin-bottom: 1rem;
-  }
-  
-  .tag-span {
-    font-size: 0.8rem;
-    padding: 0.15rem 0.3rem;
-  }
-  
-  .bb-info {
-    font-size: 0.8rem;
-  }
-  
-  .bb-tool {
-    padding-top: 0.5rem;
-    margin-top: 0.5rem;
-  }
-
-/* 超小屏幕设备优化 */
-@media (max-width: 480px) {
-  #bber {
-    padding: 0 5px !important;
-  }
-  
-  .bb-timeline .bb-item {
-    padding: 0.8rem !important;
-    border-radius: 8px !important;
-    width: 100% !important;
-    box-sizing: border-box;
-  }
-  
-  .bb-cont {
-    margin-bottom: 0.8rem;
-  }
-  
-  .bb-cont p {
-    margin: 0.2rem 0;
-    font-size: 0.95rem;
-  }
-  
-  .tag-span {
-    font-size: 0.75rem;
-    padding: 0.1rem 0.25rem;
-    margin: 0.1rem 0.1rem 0.1rem 0;
-  }
-  
-  .bb-info {
-    font-size: 0.75rem;
-    margin-top: 0.3rem;
-  }
-  
-  .datatime {
-    font-size: 0.75rem;
-  }
-  
-  .bb-tool {
-    padding-top: 0.4rem;
-    margin-top: 0.4rem;
-  }
-  
+/* 列表长卡片布局覆盖 */
+.memos-hero {
+  max-width: 760px;
+  margin: 0 auto 2rem;
 }
 
+.memos-hero h1 {
+  margin: 0;
+  color: #1b1b1b;
+  font-size: clamp(2.2rem, 5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.memos-hero p {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.bb-timeline {
+  position: static;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.bb-timeline .memo-item {
+  position: relative;
+  width: 100% !important;
+  left: auto !important;
+  top: auto !important;
+  opacity: 1;
+  padding: 0;
+}
+
+.bb-timeline .memo-item:not(:last-child) {
+  margin-bottom: 1.35rem;
+}
+
+.bb-timeline .bb-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(120, 120, 120, 0.22);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0.9rem 1.1rem 0.8rem;
+}
+
+.bb-timeline .bb-item:hover {
+  box-shadow: none;
+  transform: none;
+  border-color: rgba(120, 120, 120, 0.32);
+}
+
+.memo-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 0.7rem;
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(120, 120, 120, 0.16);
+}
+
+.memo-meta {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.memo-name {
+  display: block;
+  color: #222;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+}
+
+.memo-time-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.memo-time-link:hover {
+  color: var(--post-link-color);
+}
+
+.memo-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  margin-top: 0.7rem;
+  margin-bottom: 0;
+}
+
+.bb-cont {
+  margin-bottom: 0;
+  line-height: 1.85;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+
+.bb-cont p {
+  margin: 0.5rem 0;
+  color: inherit;
+}
+
+.bb-tool {
+  justify-content: flex-start;
+  padding-top: 0;
+  border-top: none;
+  margin-top: 0;
+  opacity: 0.78;
+  transform: none;
+  transform-origin: left center;
+  font-size: 12px;
+}
+
+.bb-info {
+  margin-top: 0;
+  font-size: 12px;
+  color: inherit;
+}
+
+.datatime {
+  color: #777;
+  white-space: nowrap;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
+}
+
+[data-user-color-scheme="light"] .memos-hero h1 {
+  color: #1b1b1b;
+}
+
+[data-user-color-scheme="light"] .memos-hero p {
+  color: #666;
+}
+
+[data-user-color-scheme="light"] .memo-name {
+  color: #1f1f1f;
+}
+
+[data-user-color-scheme="light"] .datatime {
+  color: #7a7a7a;
+}
+
+[data-user-color-scheme="light"] .bb-timeline .bb-item {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(120, 120, 120, 0.22);
+}
+
+[data-user-color-scheme="light"] .memo-head {
+  border-bottom-color: rgba(120, 120, 120, 0.16);
+}
+
+[data-user-color-scheme="light"] .bb-timeline .bb-item:hover {
+  border-color: rgba(120, 120, 120, 0.34);
+}
+
+[data-user-color-scheme="dark"] .memo-name {
+  color: var(--text-color);
+}
+
+[data-user-color-scheme="dark"] .memos-hero h1 {
+  color: #f2f2f2;
+}
+
+[data-user-color-scheme="dark"] .memos-hero p {
+  color: rgba(220, 220, 220, 0.7);
+}
+
+[data-user-color-scheme="dark"] .loader {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+[data-user-color-scheme="dark"] .datatime {
+  color: var(--sec-text-color);
+}
+
+[data-user-color-scheme="dark"] .memo-head {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-user-color-scheme="dark"] .bb-timeline .bb-item {
+  background: rgba(255, 255, 255, 0.015);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+[data-user-color-scheme="dark"] .bb-timeline .bb-item:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-user-color-scheme="light"] .loader {
+  color: #222;
+}
+
+@media (max-width: 768px) {
+  .memos-hero {
+    margin-bottom: 2rem;
+  }
+
+  .memo-head {
+    align-items: flex-start;
+  }
+
+  .bb-timeline .bb-item {
+    padding: 0.9rem 0.95rem 0.8rem;
+  }
+}
 `
 Utils.loadCssCode(allCSS);
 
@@ -620,11 +753,8 @@ Utils.loadCssCode(allCSS);
 const AppState = {
   limit: bbMemo.limit, // 每页显示条数
   memos: bbMemo.memos,// 所有数据
-  memosOpenId: null,
-  mePage: 1,
   offset: 0,
-  nextLength: 0,
-  nextDom: '', // 下一页数据
+  nextDom: null, // 下一页数据
   apiV1: '',
   bbDom: bbMemo.domId ? document.querySelector(bbMemo.domId) : null,
   isLoading: false,
@@ -632,7 +762,103 @@ const AppState = {
   emactionApi: bbMemo.emactionApi,
 };
 const load = '<div class="bb-load"><button class="load-btn button-load">加载中……</button></div>';
-const loading = `<div class="loader"><svg class="circular" viewBox="25 25 50 50"><circle class="path" cx="50" cy="50" r="20" fill="none" stroke-width="2" stroke-miterlimit="10"/></svg></div>`;
+const loading = `
+  <div class="loader" aria-label="加载中">
+    <div class="loader-frame">
+      <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
+        <g class="loader-group">
+          <path class="loader-path"></path>
+        </g>
+      </svg>
+    </div>
+  </div>
+`;
+
+function initLoaderAnimation(scope = document) {
+  const loader = scope.querySelector('.loader:not([data-loader-ready])');
+  if (!loader) {
+    return;
+  }
+
+  loader.setAttribute('data-loader-ready', 'true');
+
+  const group = loader.querySelector('.loader-group');
+  const path = loader.querySelector('.loader-path');
+  if (!group || !path) {
+    return;
+  }
+
+  const config = {
+    particleCount: 28,
+    trailSpan: 0.31,
+    durationMs: 5300,
+    rotationDurationMs: 28000,
+    pulseDurationMs: 4400,
+    strokeWidth: 4.2,
+    roseA: 9.2,
+    roseABoost: 0.6,
+    roseBreathBase: 0.72,
+    roseBreathBoost: 0.28,
+    roseScale: 3.25,
+  };
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  path.setAttribute('stroke-width', String(config.strokeWidth));
+
+  const particles = Array.from({ length: config.particleCount }, () => {
+    const circle = document.createElementNS(SVG_NS, 'circle');
+    circle.setAttribute('class', 'loader-particle');
+    group.appendChild(circle);
+    return circle;
+  });
+
+  const normalizeProgress = (progress) => ((progress % 1) + 1) % 1;
+  const pointAt = (progress, detailScale) => {
+    const t = progress * Math.PI * 2;
+    const a = config.roseA + detailScale * config.roseABoost;
+    const r = a * (config.roseBreathBase + detailScale * config.roseBreathBoost) * Math.cos(3 * t);
+    return {
+      x: 50 + Math.cos(t) * r * config.roseScale,
+      y: 50 + Math.sin(t) * r * config.roseScale,
+    };
+  };
+  const buildPath = (detailScale, steps = 240) =>
+    Array.from({ length: steps + 1 }, (_, index) => {
+      const point = pointAt(index / steps, detailScale);
+      return `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+    }).join(' ');
+
+  const startedAt = performance.now();
+  const render = (now) => {
+    if (!loader.isConnected) {
+      return;
+    }
+
+    const time = now - startedAt;
+    const progress = (time % config.durationMs) / config.durationMs;
+    const pulseProgress = (time % config.pulseDurationMs) / config.pulseDurationMs;
+    const pulseAngle = pulseProgress * Math.PI * 2;
+    const detailScale = 0.52 + ((Math.sin(pulseAngle + 0.55) + 1) / 2) * 0.48;
+    const rotation = -((time % config.rotationDurationMs) / config.rotationDurationMs) * 360;
+
+    group.setAttribute('transform', `rotate(${rotation} 50 50)`);
+    path.setAttribute('d', buildPath(detailScale));
+
+    particles.forEach((node, index) => {
+      const tailOffset = index / Math.max(config.particleCount - 1, 1);
+      const point = pointAt(normalizeProgress(progress - tailOffset * config.trailSpan), detailScale);
+      const fade = Math.pow(1 - tailOffset, 0.56);
+      node.setAttribute('cx', point.x.toFixed(2));
+      node.setAttribute('cy', point.y.toFixed(2));
+      node.setAttribute('r', (0.7 + fade * 1.9).toFixed(2));
+      node.setAttribute('opacity', (0.05 + fade * 0.95).toFixed(3));
+    });
+
+    requestAnimationFrame(render);
+  };
+
+  requestAnimationFrame(render);
+}
 
 // 初始化应用
 if (AppState.bbDom) {
@@ -641,15 +867,28 @@ if (AppState.bbDom) {
     '初始化失败'
   ).catch(error => {
     console.error('应用启动失败:', error);
-    AppState.bbDom.innerHTML = '<div class="error">加载失败，请刷新页面重试</div>';
+    renderError(error.message || '加载失败，请刷新页面重试');
   });
 }
 async function fetchStatus() {
-  let statusUrl = AppState.memos+"api/v1";
-  let response = await fetch(statusUrl);
-  if (response.ok || response.status === 404) {
-    AppState.apiV1 = 'v1/'
+  if (!AppState.memos) {
+    throw new Error('请在 index.md 中配置 memos 地址');
   }
+
+  const probeUrl = `${AppState.memos}api/v1/memos?pageSize=1`;
+  const response = await fetch(probeUrl);
+
+  if (!response.ok) {
+    throw new Error(`Memos API 探测失败，HTTP status: ${response.status}`);
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new Error('Memos API 探测失败，返回的不是 JSON 数据');
+  }
+
+  AppState.apiV1 = 'v1/';
+
   let memoOne = Utils.getQueryVariable("memo") || ''
   if(memoOne){
     getMemoOne(memoOne)
@@ -666,8 +905,27 @@ function getMemoOne(memoOne){
 
 function newApiV1(apiV1){
   getFirstList(apiV1) //首次加载数据
-  meNums(apiV1) //加载总数
   AppState.bbDom.innerHTML = loading
+  initLoaderAnimation(AppState.bbDom);
+}
+
+function buildMemosUrl({ apiV1, pageToken = '', tagName = '' } = {}) {
+  const params = new URLSearchParams({
+    creatorId: bbMemo.creatorId,
+    pageSize: String(AppState.limit),
+  });
+
+  if (pageToken) {
+    params.set('pageToken', pageToken);
+  }
+
+  if (tagName) {
+    params.set('filter', `tag in ["${tagName}"]`);
+  } else {
+    params.set('filter', `creator_id == ${bbMemo.creatorId}`);
+  }
+
+  return `${AppState.memos}api/${apiV1}memos?${params.toString()}`;
 }
 
 // 绑定加载更多按钮事件
@@ -687,6 +945,13 @@ function bindLoadMoreButton(apiV1) {
         btn.classList.add('loading');
         btn.disabled = true;
         
+        if (!AppState.nextDom || !Array.isArray(AppState.nextDom.memos)) {
+          btn.classList.remove('loading');
+          btn.textContent = '没有更多了';
+          btn.disabled = true;
+          return;
+        }
+
         updateHTMl(AppState.nextDom)
 
         if(AppState.nextDom.memos.length === 0 || AppState.nextDom.memos.length < AppState.limit){
@@ -712,8 +977,7 @@ async function getFirstList(apiV1){
   try {
     AppState.bbDom.insertAdjacentHTML('afterend', load);
     bindLoadMoreButton(apiV1); // 绑定按钮事件
-    
-    let bbUrl = AppState.memos+"api/"+apiV1+"memos?creatorId="+bbMemo.creatorId+"&filter=creator_id == 1&pageSize="+AppState.limit;
+    const bbUrl = buildMemosUrl({ apiV1 });
     const response = await fetch(bbUrl);
     
     if (!response.ok) {
@@ -733,11 +997,10 @@ async function getFirstList(apiV1){
       return
     }
 
-    AppState.mePage++
     getNextList(apiV1)
   } catch (error) {
     console.error('获取数据失败:', error);
-    AppState.bbDom.innerHTML = '<div class="error">加载失败，请刷新页面重试</div>';
+    renderError(`加载失败：${error.message || '请刷新页面重试'}`);
   }
 }
 //预加载下一页数据
@@ -754,12 +1017,11 @@ async function getNextList(apiV1){
     }
     AppState.isLoading = true;
     
-    let bbUrl = AppState.memos+"api/"+apiV1+"memos?creatorId="+bbMemo.creatorId+"&pageSize="+AppState.limit+"&pageToken="+AppState.offset;
-
-    // 存在标签过滤
-    if (AppState.tageFilter){
-      bbUrl = bbUrl + '&filter=tag in ["' + AppState.tageFilter + '"]';
-    }
+    const bbUrl = buildMemosUrl({
+      apiV1,
+      pageToken: AppState.offset,
+      tagName: AppState.tageFilter,
+    });
 
     const response = await fetch(bbUrl);
     
@@ -769,7 +1031,6 @@ async function getNextList(apiV1){
     
     const resdata = await response.json();
     AppState.nextDom = resdata
-    AppState.mePage++
     AppState.offset = resdata.nextPageToken
     
   } catch (error) {
@@ -778,9 +1039,12 @@ async function getNextList(apiV1){
     AppState.isLoading = false;
   }
 }
-//加载总 Memos 数
-function meNums(apiV1){
-  let bbLoad = document.querySelector('.bb-load')
+function getCreatorUsername(creator = '') {
+  return creator.split('/').pop() || '';
+}
+
+function getAuthorDisplayName(memo) {
+  return bbMemo.authorName || getCreatorUsername(memo.creator) || 'Memos';
 }
 // 插入 html 
 async function updateHTMl(data){
@@ -819,6 +1083,7 @@ async function updateHTMl(data){
   for(let i=0;i < memosData.length;i++){
       let bbID = memosData[i].name
       let memoUrl = AppState.memos + bbID
+      let authorName = getAuthorDisplayName(memosData[i])
       let bbCont = memosData[i].content + ' '
       let bbContREG = ''
 
@@ -889,18 +1154,24 @@ async function updateHTMl(data){
       let memosIdNow = AppState.memos.replace(/https\:\/\/(.*\.)?(.*)\..*/,'id-$2-')
       let emojiReaction = `<emoji-reaction theme="system" class="reaction" endpoint="${AppState.emactionApi}" reacttargetid="${memosIdNow+'memo-'+bbID}" style="line-height:normal;display:inline-flex;"></emoji-reaction>`
       let datacountDOM = ""
+      let displayTime = memosData[i].displayTime || memosData[i].updateTime || memosData[i].createTime
+      let displayTimeText = new Date(displayTime).toLocaleString()
 
       result +=  `<div data-id="memo-${bbID}" class="memo-item">
         <div class="bb-item">
-
+          <div class="memo-head">
+            <div class="memo-meta">
+              <span class="memo-name">${authorName}</span>
+              <a class="memo-time-link" href="${memoUrl}" target="_blank" rel="noreferrer">
+                <time class="datatime" datetime="${displayTime}">${displayTimeText}</time>
+              </a>
+            </div>
+          </div>
           <div class="bb-cont">
             ${bbContREG}
           </div>
-          <div class="bb-tool" style="padding-top:0.5rem;margin-top:0.5rem;">
-          ${emojiReaction}
-        </div>
+          <div class="memo-foot bb-tool">${emojiReaction}</div>
           <div class="bb-info">
-            <a href="${AppState.memos + bbID}" target="_blank"><span class="datatime">${new Date(memosData[i].displayTime).toLocaleString()}</span></a>
             ${datacountDOM}
           </div>
         </div>
@@ -918,7 +1189,6 @@ async function updateHTMl(data){
     const newItems = tempDiv.querySelectorAll('.memo-item');
     
     newItems.forEach(item => {
-      item.style.opacity = '0'; // 初始隐藏，等待布局
       existingTimeline.appendChild(item);
     });
     
@@ -956,16 +1226,10 @@ async function updateHTMl(data){
   //相对时间
   window.Lately && Lately.init({ target: '.datatime' });
   
-  // 为新添加的图片绑定加载事件
-  if (isIncremental) {
-    const newItems = document.querySelectorAll('.memo-item[style*="opacity: 0"]');
-    newItems.forEach(item => bindImageLoadEvents(item));
-  } else {
-    bindImageLoadEvents(document.querySelector('.bb-timeline'));
+  const timeline = document.querySelector('.bb-timeline');
+  if (timeline) {
+    bindImageLoadEvents(timeline);
   }
-  
-  // 等待图片加载完成后再初始化瀑布流布局
-  waitForImagesAndLayout(isIncremental);
 }
 
 // 移除图片占位样式
@@ -977,20 +1241,13 @@ function removeImagePlaceholder(img) {
 // 为新添加的图片绑定加载事件
 function bindImageLoadEvents(container) {
   const images = container.querySelectorAll('img');
-  let layoutTimeoutId = null;
-  
+
   images.forEach(img => {
     if (img.complete && img.naturalHeight !== 0) {
       removeImagePlaceholder(img);
     } else {
       img.addEventListener('load', function() {
         removeImagePlaceholder(this);
-        
-        // 图片加载完成后，延迟重新布局以避免频繁重计算
-        clearTimeout(layoutTimeoutId);
-        layoutTimeoutId = setTimeout(() => {
-          initWaterfallLayout(false); // 重新布局所有项目
-        }, 100);
       }, { once: true });
       
       img.addEventListener('error', function() {
@@ -998,12 +1255,6 @@ function bindImageLoadEvents(container) {
         // 可以在这里设置错误占位图
         this.style.backgroundColor = '#f0f0f0';
         this.style.backgroundImage = 'none';
-        
-        // 即使图片加载失败也要重新布局
-        clearTimeout(layoutTimeoutId);
-        layoutTimeoutId = setTimeout(() => {
-          initWaterfallLayout(false);
-        }, 100);
       }, { once: true });
     }
   });
@@ -1021,16 +1272,15 @@ function getTypeOfMemos(e){
   });
   let tagHtmlNow = `<span class='tag-span' onclick='reLoad()'>${e.innerHTML}</span>`
   document.querySelector('#tag-list').innerHTML = tagHtmlNow
-  let bbUrl = AppState.memos+"api/"+AppState.apiV1+"memos?creatorId="+bbMemo.creatorId+"&filter=tag in [\""+tagName+"\"]&pageSize="+AppState.limit;
   // 标签模式，同时重置页面序列
   AppState.tageFilter = tagName
-  AppState.mePage = 1
-  fetchMemoDOM(bbUrl)
+  fetchMemoDOM(buildMemosUrl({ apiV1: AppState.apiV1, tagName }))
 }
 
 async function fetchMemoDOM(bbUrl){
   try {
     AppState.bbDom.innerHTML = loading
+    initLoaderAnimation(AppState.bbDom);
     const response = await fetch(bbUrl);
     
     if (!response.ok) {
@@ -1061,7 +1311,7 @@ async function fetchMemoDOM(bbUrl){
     }
   } catch (error) {
     console.error('获取数据失败:', error);
-    AppState.bbDom.innerHTML = '<div class="error">加载失败，请刷新页面重试</div>';
+    renderError(`加载失败：${error.message || '请刷新页面重试'}`);
   }
 }
 
@@ -1069,154 +1319,7 @@ function reLoad(){
   let urlThis = location.protocol + '//' + location.host + location.pathname;
   window.location.replace(urlThis)
 }
-
-// 瀑布流布局函数
-function initWaterfallLayout(onlyNewItems = false) {
-  
-  const container = document.querySelector('.bb-timeline');
-  if (!container) return;
-  
-  const items = container.querySelectorAll('.memo-item');
-  if (items.length === 0) return;
-  
-  const containerWidth = container.clientWidth;
-  const screenWidth = window.innerWidth;
-  
-  // 响应式设计
-  let itemWidth, gap, columns;
-  
-  if (screenWidth < 997) {
-    // 移动端：卡片占满屏幕宽度，根据屏幕大小调整边距
-    let horizontalMargin;
-    if (screenWidth < 480) {
-      horizontalMargin = 5; // 小屏幕设备边距更小
-    } else {
-      horizontalMargin = 10; // 中等屏幕设备
-    }
-    
-    itemWidth = containerWidth - horizontalMargin;
-    gap = 5;
-    columns = 1;
-    
-    // 确保最小宽度
-    if (itemWidth < 200) {
-      itemWidth = 200;
-    }
-    
-    // 更新所有卡片的宽度
-    items.forEach(item => {
-      item.style.width = itemWidth + 'px';
-    });
-  } else {
-    // 桌面端：瀑布流布局
-    itemWidth = 280;
-    gap = 6;
-    columns = Math.floor(containerWidth / (itemWidth + gap));
-    
-    // 限制最大列数
-    if (columns > 4) {
-      columns = 4;
-    }
-    
-    // 确保至少1列
-    if (columns < 1) {
-      columns = 1;
-    }
-    
-    // 更新所有卡片的宽度
-    items.forEach(item => {
-      item.style.width = itemWidth + 'px';
-    });
-  }
-  
-  const actualGap = columns === 1 ? gap : (containerWidth - columns * itemWidth) / (columns + 1);
-  
-  let columnHeights = new Array(columns).fill(actualGap * 0.5);
-  
-  // 如果是增量加载，获取现有的列高度
-  if (onlyNewItems) {
-    const existingItems = Array.from(items).filter(item => item.style.opacity !== '0' && item.style.opacity !== '');
-    if (existingItems.length > 0) {
-      columnHeights = new Array(columns).fill(0);
-      existingItems.forEach(item => {
-        const left = parseInt(item.style.left);
-        const top = parseInt(item.style.top);
-        
-        if (columns === 1) {
-          // 移动端单列布局
-          const bottom = top + item.offsetHeight;
-          columnHeights[0] = Math.max(columnHeights[0], bottom);
-        } else {
-          // 桌面端多列布局
-          const columnIndex = Math.round(left / (itemWidth + actualGap));
-          const bottom = top + item.offsetHeight;
-          if (columnIndex >= 0 && columnIndex < columns) {
-            columnHeights[columnIndex] = Math.max(columnHeights[columnIndex], bottom);
-          }
-        }
-      });
-    }
-  }
-  
-  const itemsToProcess = onlyNewItems ? 
-    Array.from(items).filter(item => item.style.opacity === '0' || item.style.opacity === '') : 
-    Array.from(items);
-  
-  itemsToProcess.forEach((item) => {
-    // 确保项目有实际内容再进行布局
-    if (item.offsetHeight === 0) {
-      // 强制重绘以获取正确高度
-      item.style.display = 'none';
-      item.offsetHeight; // 触发回流
-      item.style.display = '';
-    }
-    
-    let left, top, columnIndex;
-    
-    if (columns === 1) {
-      // 移动端单列布局，居中显示
-      left = (containerWidth - itemWidth) / 2;
-      top = columnHeights[0] + gap;
-      columnIndex = 0;
-    } else {
-      // 桌面端多列布局
-      const minHeight = Math.min(...columnHeights);
-      columnIndex = columnHeights.indexOf(minHeight);
-      left = actualGap + columnIndex * (itemWidth + actualGap);
-      top = minHeight + 4;
-    }
-    
-    // 设置位置
-    item.style.left = left + 'px';
-    item.style.top = top + 'px';
-    item.style.opacity = '1';
-    
-    // 更新列高度
-    columnHeights[columnIndex] = top + item.offsetHeight + gap;
-  });
-  
-  // 设置容器高度
-  const maxHeight = Math.max(...columnHeights);
-  container.style.height = (maxHeight + gap) + 'px';
-}
-
-// 防抖函数
-function debounceWaterfall() {
-  let timeout;
-  return function() {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      // 重新布局所有项目，以适应新的屏幕尺寸
-      initWaterfallLayout(false);
-    }, 150);
-  };
-}
-
-const debouncedWaterfall = debounceWaterfall();
-
-window.addEventListener('resize', debouncedWaterfall);
 window.addEventListener('load', () => {
-  initWaterfallLayout();
   // 预加载图片
   const imgObserver = new IntersectionObserver((entries, observer) => {
     entries.forEach(entry => {
@@ -1236,84 +1339,3 @@ window.addEventListener('load', () => {
     imgObserver.observe(img);
   });
 });
-
-// 监听设备方向变化
-window.addEventListener('orientationchange', () => {
-  setTimeout(() => {
-    debouncedWaterfall();
-  }, 300); // 等待方向变化完成
-});
-
-// 等待图片加载完成后执行瀑布流布局
-function waitForImagesAndLayout(onlyNewItems = false) {
-  const container = document.querySelector('.bb-timeline');
-  if (!container) return;
-  
-  // 获取需要处理的图片
-  const targetItems = onlyNewItems ? 
-    container.querySelectorAll('.memo-item[style*="opacity: 0"], .memo-item:not([style])') : 
-    container.querySelectorAll('.memo-item');
-  
-  const images = [];
-  targetItems.forEach(item => {
-    const itemImages = item.querySelectorAll('img');
-    itemImages.forEach(img => images.push(img));
-  });
-  
-  if (images.length === 0) {
-    // 没有图片，直接执行布局
-    setTimeout(() => {
-      initWaterfallLayout(onlyNewItems);
-      if (!onlyNewItems) {
-        window.addEventListener('resize', debouncedWaterfall);
-      }
-    }, 50);
-    return;
-  }
-  
-  let loadedCount = 0;
-  const totalImages = images.length;
-  
-  function checkAllImagesLoaded() {
-    loadedCount++;
-    if (loadedCount >= totalImages) {
-      // 所有图片加载完成，执行布局
-      setTimeout(() => {
-        initWaterfallLayout(onlyNewItems);
-        if (!onlyNewItems) {
-          window.addEventListener('resize', debouncedWaterfall);
-        }
-      }, 50);
-    }
-  }
-  
-  images.forEach(img => {
-    if (img.complete && img.naturalHeight !== 0) {
-      // 图片已经加载完成
-      checkAllImagesLoaded();
-    } else {
-      // 图片还在加载中
-      img.addEventListener('load', checkAllImagesLoaded, { once: true });
-      img.addEventListener('error', checkAllImagesLoaded, { once: true });
-      
-      // 如果图片加载时间过长，设置超时
-      setTimeout(() => {
-        if (!img.complete || img.naturalHeight === 0) {
-          console.warn('图片加载超时，强制执行布局:', img.src);
-          checkAllImagesLoaded();
-        }
-      }, 3000); // 3秒超时
-    }
-  });
-  
-  // 兜底机制：最多等待5秒
-  setTimeout(() => {
-    if (loadedCount < totalImages) {
-      console.warn('部分图片加载超时，强制执行布局');
-      initWaterfallLayout(onlyNewItems);
-      if (!onlyNewItems) {
-        window.addEventListener('resize', debouncedWaterfall);
-      }
-    }
-  }, 5000);
-}
