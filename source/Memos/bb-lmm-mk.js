@@ -398,6 +398,131 @@ const allCSS = `
   height: 100%;
 }
 
+.github-repo-card {
+  display: block;
+  margin: 0.9rem 0 0.3rem;
+  width: min(100%, 460px);
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0.82rem 0.95rem;
+  color: inherit;
+  text-decoration: none;
+  border: 1px solid rgba(120, 120, 120, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.github-repo-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(120, 120, 120, 0.34);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.github-repo-card__header,
+.github-repo-card__top,
+.github-repo-card__owner,
+.github-repo-card__title,
+.github-repo-card__meta {
+  display: flex;
+}
+
+.github-repo-card__header,
+.github-repo-card__top {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.github-repo-card__owner,
+.github-repo-card__title {
+  min-width: 0;
+  gap: 0.82rem;
+}
+
+.github-repo-card__owner {
+  align-items: flex-start;
+}
+
+.github-repo-card__title {
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.github-repo-card__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.12rem 0.4rem;
+  border: 1px solid rgba(120, 120, 120, 0.22);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.github-repo-card__name,
+.github-repo-card__repo {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+}
+
+.github-repo-card__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  color: #666;
+  line-height: 1;
+  transform: none;
+}
+
+.github-repo-card__mark-icon {
+  display: block;
+  width: 26px;
+  height: 26px;
+}
+
+.github-repo-card__body,
+.github-repo-card__desc {
+  color: #666;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.github-repo-card__desc {
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.github-repo-card__meta {
+  flex-wrap: wrap;
+  gap: 0.42rem 0.75rem;
+  margin-top: 0.55rem;
+  color: #777;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.github-repo-card__arrow {
+  color: #777;
+  align-self: flex-start;
+  margin-top: 0.05rem;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.github-repo-card.is-loading .github-repo-card__body,
+.github-repo-card.is-error .github-repo-card__desc {
+  color: #888;
+}
+
 /* 加载动画 */
 .loader {
   position: relative;
@@ -692,6 +817,26 @@ const allCSS = `
   border-bottom-color: rgba(120, 120, 120, 0.16);
 }
 
+[data-user-color-scheme="light"] .github-repo-card {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(120, 120, 120, 0.2);
+}
+
+[data-user-color-scheme="light"] .github-repo-card:hover {
+  border-color: rgba(120, 120, 120, 0.34);
+}
+
+[data-user-color-scheme="light"] .github-repo-card__desc,
+[data-user-color-scheme="light"] .github-repo-card__body {
+  color: #666;
+}
+
+[data-user-color-scheme="light"] .github-repo-card__meta,
+[data-user-color-scheme="light"] .github-repo-card__arrow,
+[data-user-color-scheme="light"] .github-repo-card__mark {
+  color: #777;
+}
+
 [data-user-color-scheme="light"] .bb-timeline .bb-item:hover {
   border-color: rgba(120, 120, 120, 0.34);
 }
@@ -720,6 +865,32 @@ const allCSS = `
   border-bottom-color: rgba(255, 255, 255, 0.12);
 }
 
+[data-user-color-scheme="dark"] .github-repo-card {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-user-color-scheme="dark"] .github-repo-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+[data-user-color-scheme="dark"] .github-repo-card__desc,
+[data-user-color-scheme="dark"] .github-repo-card__body {
+  color: var(--sec-text-color);
+}
+
+[data-user-color-scheme="dark"] .github-repo-card__meta,
+[data-user-color-scheme="dark"] .github-repo-card__arrow,
+[data-user-color-scheme="dark"] .github-repo-card__badge,
+[data-user-color-scheme="dark"] .github-repo-card__mark {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+[data-user-color-scheme="dark"] .github-repo-card__badge {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
 [data-user-color-scheme="dark"] .bb-timeline .bb-item {
   background: rgba(255, 255, 255, 0.015);
   border-color: rgba(255, 255, 255, 0.14);
@@ -740,6 +911,31 @@ const allCSS = `
 
   .memo-head {
     align-items: flex-start;
+  }
+
+  .github-repo-card {
+    width: 100%;
+    padding: 0.76rem 0.84rem;
+  }
+
+  .github-repo-card__top {
+    align-items: flex-start;
+  }
+
+  .github-repo-card__owner {
+    align-items: flex-start;
+  }
+
+  .github-repo-card__mark {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+
+  .github-repo-card__mark-icon {
+    width: 22px;
+    height: 22px;
   }
 
   .bb-timeline .bb-item {
@@ -1046,6 +1242,173 @@ function getCreatorUsername(creator = '') {
 function getAuthorDisplayName(memo) {
   return bbMemo.authorName || getCreatorUsername(memo.creator) || 'Memos';
 }
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function normalizeGithubRepoPath(pathname = '') {
+  const parts = pathname.split('/').filter(Boolean);
+  if (parts.length < 2) {
+    return null;
+  }
+
+  const owner = parts[0];
+  const repo = parts[1].replace(/\.git$/i, '');
+  return owner && repo ? `${owner}/${repo}` : null;
+}
+
+function parseGithubRepoUrl(url = '') {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+    if (host !== 'github.com') {
+      return null;
+    }
+
+    const repoPath = normalizeGithubRepoPath(parsed.pathname);
+    if (!repoPath) {
+      return null;
+    }
+
+    const segments = parsed.pathname.split('/').filter(Boolean);
+    if (segments.length > 2 && !segments[1].endsWith('.git')) {
+      return null;
+    }
+
+    const [owner, repo] = repoPath.split('/');
+    return {
+      owner,
+      repo,
+      fullName: repoPath,
+      url: `https://github.com/${repoPath}`,
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+function wrapGithubRepoLinks(text = '') {
+  const GITHUB_REPO_RAW_REG = /(^|[\s>])https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)(?:\.git)?(?=\/?(?:[?#)\]\s<]|$))/gi;
+
+  return text.replace(GITHUB_REPO_RAW_REG, (match, prefix, owner, repo) => {
+    const cleanRepo = repo.replace(/\.git$/i, '');
+    const url = `https://github.com/${owner}/${cleanRepo}`;
+    return `${prefix}[${owner}/${cleanRepo}](${url})`;
+  });
+}
+
+function createGithubRepoCardSkeleton(repoInfo, url) {
+  return `<a class="github-repo-card is-loading" href="${escapeHtml(url)}" target="_blank" rel="noreferrer" data-github-repo="${escapeHtml(repoInfo.fullName)}" data-github-url="${escapeHtml(url)}">
+    <span class="github-repo-card__header">
+      <span class="github-repo-card__badge">GitHub</span>
+      <span class="github-repo-card__name">${escapeHtml(repoInfo.fullName)}</span>
+    </span>
+    <span class="github-repo-card__body">正在加载仓库信息…</span>
+  </a>`;
+}
+
+const GITHUB_BRANCH_ICON = `<svg class="github-repo-card__mark-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 5c0-1.11-.89-2-2-2a1.993 1.993 0 0 0-1 3.72v.3c-.02.52-.23.98-.63 1.38c-.4.4-.86.61-1.38.63c-.83.02-1.48.16-2 .45V4.72a1.993 1.993 0 0 0-1-3.72C.88 1 0 1.89 0 3a2 2 0 0 0 1 1.72v6.56c-.59.35-1 .99-1 1.72c0 1.11.89 2 2 2c1.11 0 2-.89 2-2c0-.53-.2-1-.53-1.36c.09-.06.48-.41.59-.47c.25-.11.56-.17.94-.17c1.05-.05 1.95-.45 2.75-1.25S8.95 7.77 9 6.73h-.02C9.59 6.37 10 5.73 10 5zM2 1.8c.66 0 1.2.55 1.2 1.2c0 .65-.55 1.2-1.2 1.2C1.35 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2zm0 12.41c-.66 0-1.2-.55-1.2-1.2c0-.65.55-1.2 1.2-1.2c.65 0 1.2.55 1.2 1.2c0 .65-.55 1.2-1.2 1.2zm6-8c-.66 0-1.2-.55-1.2-1.2c0-.65.55-1.2 1.2-1.2c.65 0 1.2.55 1.2 1.2c0 .65-.55 1.2-1.2 1.2z"/></svg>`;
+
+function renderGithubRepoCard(data, fallbackUrl, fallbackFullName) {
+  const fullName = data.full_name || fallbackFullName;
+  const description = data.description ? escapeHtml(data.description) : '没有简介';
+  const language = data.language ? escapeHtml(data.language) : 'Unknown';
+  const stars = Number(data.stargazers_count || 0).toLocaleString();
+  const forks = Number(data.forks_count || 0).toLocaleString();
+  const updatedAt = data.updated_at ? new Date(data.updated_at).toLocaleDateString() : '';
+
+  return `<span class="github-repo-card__top">
+      <span class="github-repo-card__owner">
+        <span class="github-repo-card__mark" aria-hidden="true">${GITHUB_BRANCH_ICON}</span>
+        <span class="github-repo-card__title">
+          <span class="github-repo-card__repo">${escapeHtml(fullName)}</span>
+          <span class="github-repo-card__desc">${description}</span>
+        </span>
+      </span>
+      <span class="github-repo-card__arrow" aria-hidden="true">↗</span>
+    </span>
+    <span class="github-repo-card__meta">
+      <span>★ ${stars}</span>
+      <span>⑂ ${forks}</span>
+      <span>${language}</span>
+      ${updatedAt ? `<span>更新于 ${escapeHtml(updatedAt)}</span>` : ''}
+    </span>`;
+}
+
+const githubRepoCache = new Map();
+
+async function fetchGithubRepoMeta(owner, repo) {
+  const key = `${owner}/${repo}`;
+
+  if (githubRepoCache.has(key)) {
+    return githubRepoCache.get(key);
+  }
+
+  const request = fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+    }
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(`GitHub API 请求失败: ${response.status}`);
+    }
+
+    return response.json();
+  }).catch((error) => {
+    githubRepoCache.delete(key);
+    throw error;
+  });
+
+  githubRepoCache.set(key, request);
+  return request;
+}
+
+async function hydrateGithubRepoCards(root = document) {
+  const cards = root.querySelectorAll?.('[data-github-repo]') || [];
+  if (!cards.length) {
+    return;
+  }
+
+  await Promise.all(Array.from(cards).map(async (card) => {
+    const repoKey = card.dataset.githubRepo;
+    const fallbackUrl = card.dataset.githubUrl || card.href;
+    if (!repoKey) {
+      return;
+    }
+
+    const [owner, repo] = repoKey.split('/');
+    if (!owner || !repo) {
+      return;
+    }
+
+    try {
+      const data = await fetchGithubRepoMeta(owner, repo);
+      card.classList.remove('is-loading', 'is-error');
+      card.innerHTML = renderGithubRepoCard(data, fallbackUrl, repoKey);
+      card.href = data.html_url || fallbackUrl;
+      card.setAttribute('aria-label', `GitHub 仓库 ${repoKey}`);
+    } catch (error) {
+      console.warn(`加载 GitHub 仓库失败: ${repoKey}`, error);
+      card.classList.add('is-error');
+      card.innerHTML = `<span class="github-repo-card__top">
+          <span class="github-repo-card__title">
+            <span class="github-repo-card__repo">${escapeHtml(repoKey)}</span>
+            <span class="github-repo-card__desc">GitHub 信息加载失败，点击可直接访问仓库</span>
+          </span>
+          <span class="github-repo-card__arrow" aria-hidden="true">↗</span>
+        </span>
+        <span class="github-repo-card__meta">
+          <span>${escapeHtml(repoKey)}</span>
+        </span>`;
+    }
+  }));
+}
 // 插入 html 
 async function updateHTMl(data){
   if (!data || !data.memos) {
@@ -1087,7 +1450,8 @@ async function updateHTMl(data){
       let bbCont = memosData[i].content + ' '
       let bbContREG = ''
 
-      bbContREG += bbCont.replace(TAG_REG, "")
+      bbContREG += wrapGithubRepoLinks(bbCont)
+        .replace(TAG_REG, "")
         .replace(IMG_REG, "")
         .replace(LINK_REG, '<a class="primary" href="$2" target="_blank">$1</a>')
 
@@ -1109,6 +1473,13 @@ async function updateHTMl(data){
         .replace(QQVIDEO_REG, "<div class='video-wrapper'><iframe src='//v.qq.com/iframe/player.html?vid=$1' allowFullScreen='true' frameborder='no'></iframe></div>")
         .replace(YOUKU_REG, "<div class='video-wrapper'><iframe src='https://player.youku.com/embed/$1' frameborder=0 'allowfullscreen'></iframe></div>")
         .replace(YOUTUBE_REG, "<div class='video-wrapper'><iframe src='https://www.youtube.com/embed/$1' title='YouTube video player' frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen title='YouTube Video'></iframe></div>")
+        .replace(/<a([^>]*?)href="(https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)(?:\.git)?\/?)"([^>]*)>(.*?)<\/a>/gi, (match, beforeHref, href) => {
+          const repoInfo = parseGithubRepoUrl(href);
+          if (!repoInfo) {
+            return match;
+          }
+          return createGithubRepoCardSkeleton(repoInfo, repoInfo.url);
+        })
 
       //解析 content 内 md 格式图片
       let IMG_ARR = memosData[i].content.match(IMG_REG) || '',IMG_ARR_Grid='';
@@ -1191,6 +1562,8 @@ async function updateHTMl(data){
     newItems.forEach(item => {
       existingTimeline.appendChild(item);
     });
+
+    hydrateGithubRepoCards(existingTimeline);
     
     // 更新按钮文本并重新绑定事件
     const loadBtn = document.querySelector('button.button-load');
@@ -1209,6 +1582,7 @@ async function updateHTMl(data){
     let loaderDom = document.querySelector('.loader') || ""
     if(loaderDom) loaderDom.remove()
     AppState.bbDom.insertAdjacentHTML('beforeend', resultAll);
+    hydrateGithubRepoCards(AppState.bbDom);
     
     // 更新按钮文本并重新绑定事件
     const loadBtn = document.querySelector('button.button-load');
